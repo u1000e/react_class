@@ -12,6 +12,8 @@ import {
   Message,
 } from "./BoardDetail.styles";
 import { useParams, useNavigate } from "react-router-dom";
+import CommentList from "../Comment/CommentList";
+import CommentForm from "../Comment/CommentForm";
 
 const BoardDetail = () => {
   const { id } = useParams();
@@ -20,6 +22,8 @@ const BoardDetail = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState([]);
+  const [refreshComments, setRefreshComments] = useState(false); // 댓글 재조회 트리거
 
   useEffect(() => {
     const fetchBoard = async () => {
@@ -35,8 +39,23 @@ const BoardDetail = () => {
       }
     };
 
+    const fetchComments = async () => {
+      try {
+        const response = await axios.get(`http://localhost/comments/${id}`);
+        setComments(response.data);
+      } catch (err) {
+        console.error("댓글 조회 실패:", err);
+        // 댓글 조회 실패 시에도 게시글은 표시되도록 처리
+      }
+    };
+
     fetchBoard();
-  }, [id]);
+    fetchComments();
+  }, [id, refreshComments]);
+
+  const triggerRefreshComments = () => {
+    setRefreshComments((prev) => !prev);
+  };
 
   const handleBack = () => {
     navigate(-1);
@@ -95,6 +114,12 @@ const BoardDetail = () => {
         </div>
       )}
       <BackButton onClick={handleBack}>뒤로가기</BackButton>
+
+      <hr />
+
+      <h3>댓글</h3>
+      <CommentForm boardId={id} onSuccess={triggerRefreshComments} />
+      <CommentList boardId={id} comments={comments} />
     </Container>
   );
 };
